@@ -9,13 +9,10 @@ env:
   IMAGE_NAME: ghcr.io/kanieloutis01/home-finance-service
 
 jobs:
-
   build-deploy:
-
     runs-on: ubuntu-latest
 
     steps:
-
       - name: Checkout Code
         uses: actions/checkout@v4
 
@@ -39,12 +36,10 @@ jobs:
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
       - name: Build Image
-        run: |
-          docker build -t $IMAGE_NAME:$IMAGE_TAG .
+        run: docker build -t $IMAGE_NAME:$IMAGE_TAG .
 
       - name: Push Image
-        run: |
-          docker push $IMAGE_NAME:$IMAGE_TAG
+        run: docker push $IMAGE_NAME:$IMAGE_TAG
 
       - name: Install oc CLI
         run: |
@@ -53,17 +48,13 @@ jobs:
           sudo mv oc /usr/local/bin/
 
       - name: Login OpenShift
-        run: |
-          oc login --token=${{ secrets.OPENSHIFT_TOKEN }} --server=${{ secrets.OPENSHIFT_SERVER }}
+        run: oc login --token=${{ secrets.OPENSHIFT_TOKEN }} --server=${{ secrets.OPENSHIFT_SERVER }}
 
       - name: Select Namespace
-        run: |
-          oc project ${{ secrets.OPENSHIFT_NAMESPACE }}
+        run: oc project ${{ secrets.OPENSHIFT_NAMESPACE }}
 
       - name: Deploy Manifests
-        run: |
-          oc apply -f k8s/
+        run: oc apply -f k8s/
 
       - name: Update Image
-        run: |
-          oc set image deployment/hf-home-finance-service home-finance-service=$IMAGE_NAME:$IMAGE_TAG
+        run: oc set image deployment/hf-home-finance-service home-finance-service=$IMAGE_NAME:$IMAGE_TAG
