@@ -1,0 +1,12 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: hf-home-finance-route
+
+spec:
+  to:
+    kind: Service
+    name: hf-home-finance-svc
+
+  port:
+    targetPort: 8081

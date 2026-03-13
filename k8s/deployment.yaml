@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hf-home-finance-service
+
+spec:
+  replicas: 2
+
+  selector:
+    matchLabels:
+      app: home-finance-service
+
+  template:
+    metadata:
+      labels:
+        app: home-finance-service
+
+    spec:
+      containers:
+        - name: home-finance-service
+          image: ghcr.io/kanieloutis01/home-finance-service:1.0.0
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - containerPort: 8081
+
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8081
+            initialDelaySeconds: 30
+
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8081
+            initialDelaySeconds: 10
