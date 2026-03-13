@@ -8,7 +8,8 @@ spec:
     app: home-finance-service
 
   ports:
-    - port: 8081
+    - name: http
+      port: 8081
       targetPort: 8081
       protocol: TCP
 
