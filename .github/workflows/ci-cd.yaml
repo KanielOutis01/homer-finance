@@ -1,0 +1,69 @@
+name: Home Finance CI/CD
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/home-finance-service
+
+jobs:
+
+  build-deploy:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Read Version
+        run: |
+          VERSION=$(cat VERSION)
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          IMAGE_TAG=$VERSION-$SHORT_SHA
+          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Build Application
+        run: mvn clean package -DskipTests
+
+      - name: Login GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Build Image
+        run: |
+          docker build -t $IMAGE_NAME:$IMAGE_TAG .
+
+      - name: Push Image
+        run: |
+          docker push $IMAGE_NAME:$IMAGE_TAG
+
+      - name: Install oc CLI
+        run: |
+          curl -LO https://mirror.openshift.com/pub/openshift-v4/clients/oc/latest/linux/oc.tar.gz
+          tar -xvf oc.tar.gz
+          sudo mv oc /usr/local/bin/
+
+      - name: Login OpenShift
+        run: |
+          oc login --token=${{ secrets.OPENSHIFT_TOKEN }} --server=${{ secrets.OPENSHIFT_SERVER }}
+
+      - name: Select Namespace
+        run: |
+          oc project ${{ secrets.OPENSHIFT_NAMESPACE }}
+
+      - name: Deploy Manifests
+        run: |
+          oc apply -f k8s/
+
+      - name: Update Image
+        run: |
+          oc set image deployment/hf-home-finance-service home-finance-service=$IMAGE_NAME:$IMAGE_TAG
